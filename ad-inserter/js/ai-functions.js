@@ -5427,10 +5427,11 @@ function ai_check_close_buttons () {
     // ***
     var ai_close_button = element.querySelector ('.ai-close-button.ai-close-unprocessed');
 
-    var block = ai_close_button.dataset.aiBlock;
-
     if (ai_close_button != null) {
+      var block = ai_close_button.dataset.aiBlock;
+
       ai_close_button.addEventListener ('click', (event) => {
+
         ai_close_block (ai_close_button);
 
         if (typeof ai_close_button_action == 'function') {
@@ -5441,7 +5442,6 @@ function ai_check_close_buttons () {
           ai_close_button_action (block);
         }
       });
-
 
       var min_block_height = 0;
       if (typeof ai_close_min_block_height !== 'undefined' && ai_close_min_block_height.constructor === Array) {

@@ -10496,7 +10496,8 @@ class ai_code_generator {
     try {
       $dom = new DOMDocument ();
       libxml_use_internal_errors (true);
-      $dom->loadHTML ($code);
+//      $dom->loadHTML ($code);
+      $dom->loadHTML ("<meta http-equiv='Content-Type' content='charset=utf-8' />$code");
       libxml_clear_errors ();
     } catch (Exception $e) {
         echo 'ERROR: ', $e->getMessage();
