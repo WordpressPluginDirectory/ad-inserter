@@ -2,7 +2,7 @@
 
 /*
 Plugin Name: Ad Inserter
-Version: 2.7.38
+Version: 2.8.0
 Description: Ad management with many advanced advertising features to insert ads at optimal positions
 Author: Igor Funa
 Author URI: http://igorfuna.com/
@@ -17,6 +17,19 @@ License: GPLv3
 /*
 
 Change Log
+
+Ad Inserter 2.8.0 - 2025-01-21
+- Replaced placeholder image generator service - changed to dummyimage.com
+- Security fix for potential cross site scripting (Pro only)
+- Added support to show rotation options in the list of blocks
+- Added support for custom reports for clients (Pro only)
+- Few minor bug fixes, cosmetic changes and code improvements
+
+Ad Inserter 2.7.39 - 2024-12-17
+- Improved frontend code
+- Fix for warning "Function _load_textdomain_just_in_time was called incorrectly"
+- Updated Maxmind library (Pro only)
+- Few minor bug fixes, cosmetic changes and code improvements
 
 Ad Inserter 2.7.38 - 2024-10-03
 - Security fix for potential cross site scripting
@@ -3079,20 +3092,14 @@ function ai_adb_code () {
 function ai_adb_external_scripts () {
   $code = '';
 
-//  if (!defined ('AI_ADB_NO_DOUBLECLICK_NET')) {
-//    $code .= '<object id="ai-adb-dblclk" data="https://securepubads.g.doubleclick.net/tag/js/gpt.js" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
-//  }
   if (!defined ('AI_ADB_NO_GOOGLE_ANALYTICS')) {
     $code .= '<object id="ai-adb-ga" data="https://www.google-analytics.com/analytics.js" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
   }
   if (!defined ('AI_ADB_NO_MEDIA_NET')) {
     $code .= '<object id="ai-adb-mn" data="//contextual.media.net/dmedianet.js" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
   }
-//  if (!defined ('AI_ADB_NO_AMAZON-ADSYSTEM')) {
-//    $code .= '<object id="ai-adb-am" data="https://z-na.amazon-adsystem.com/widgets/onejs" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
-//  }
-  if (!defined ('AI_ADB_NO_EZOIC_CMP')) {
-    $code .= '<object id="ai-adb-ez" data="https://g.ezodn.com/cmp/v2/v.js" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
+  if (!defined ('AI_ADB_NO_GTM')) {
+    $code .= '<object id="ai-adb-gtm" data="https://www.googletagmanager.com/gtag/js" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
   }
   if (!defined ('AI_ADB_NO_QUANT')) {
     $code .= '<object id="ai-adb-qu" data="https://secure.quantserve.com/quant.js" style="position:absolute; z-index: -100; top: -1000px; left: -1000px; visibility: hidden;"></object>' . "\n";
@@ -5192,16 +5199,16 @@ function ai_write_debug_info ($write_processing_log = false) {
     echo "\n\n";
 
 
-    echo "SERVER_ADDR:             ", isset ($_SERVER ['SERVER_ADDR']) ? $_SERVER ['SERVER_ADDR'] : '', "\n";
-    echo "HTTP_CF_CONNECTING_IP:   ", isset ($_SERVER ['HTTP_CF_CONNECTING_IP']) ? $_SERVER ['HTTP_CF_CONNECTING_IP'] : '', "\n";
-    echo "HTTP_CLIENT_IP:          ", isset ($_SERVER ['HTTP_CLIENT_IP']) ? $_SERVER ['HTTP_CLIENT_IP'] : '', "\n";
-    echo "HTTP_INCAP_CLIENT_IP:    ", isset ($_SERVER ['HTTP_INCAP_CLIENT_IP']) ? $_SERVER ['HTTP_INCAP_CLIENT_IP'] : '', "\n";
-    echo "HTTP_X_FORWARDED_FOR:    ", isset ($_SERVER ['HTTP_X_FORWARDED_FOR']) ? $_SERVER ['HTTP_X_FORWARDED_FOR'] : '', "\n";
-    echo "HTTP_X_FORWARDED:        ", isset ($_SERVER ['HTTP_X_FORWARDED']) ? $_SERVER ['HTTP_X_FORWARDED'] : '', "\n";
-    echo "HTTP_X_CLUSTER_CLIENT_IP:", isset ($_SERVER ['HTTP_X_CLUSTER_CLIENT_IP']) ? $_SERVER ['HTTP_X_CLUSTER_CLIENT_IP'] : '', "\n";
-    echo "HTTP_FORWARDED_FOR:      ", isset ($_SERVER ['HTTP_FORWARDED_FOR']) ? $_SERVER ['HTTP_FORWARDED_FOR'] : '', "\n";
-    echo "HTTP_FORWARDED:          ", isset ($_SERVER ['HTTP_FORWARDED']) ? $_SERVER ['HTTP_FORWARDED'] : '', "\n";
-    echo "REMOTE_ADDR:             ", isset ($_SERVER ['REMOTE_ADDR']) ? $_SERVER ['REMOTE_ADDR'] : '', "\n";
+    echo "SERVER_ADDR:             ", isset ($_SERVER ['SERVER_ADDR']) ? strip_tags ($_SERVER ['SERVER_ADDR']) : '', "\n";
+    echo "HTTP_CF_CONNECTING_IP:   ", isset ($_SERVER ['HTTP_CF_CONNECTING_IP']) ? strip_tags ($_SERVER ['HTTP_CF_CONNECTING_IP']) : '', "\n";
+    echo "HTTP_CLIENT_IP:          ", isset ($_SERVER ['HTTP_CLIENT_IP']) ? strip_tags ($_SERVER ['HTTP_CLIENT_IP']) : '', "\n";
+    echo "HTTP_INCAP_CLIENT_IP:    ", isset ($_SERVER ['HTTP_INCAP_CLIENT_IP']) ? strip_tags ($_SERVER ['HTTP_INCAP_CLIENT_IP']) : '', "\n";
+    echo "HTTP_X_FORWARDED_FOR:    ", isset ($_SERVER ['HTTP_X_FORWARDED_FOR']) ? strip_tags ($_SERVER ['HTTP_X_FORWARDED_FOR']) : '', "\n";
+    echo "HTTP_X_FORWARDED:        ", isset ($_SERVER ['HTTP_X_FORWARDED']) ? strip_tags ($_SERVER ['HTTP_X_FORWARDED']) : '', "\n";
+    echo "HTTP_X_CLUSTER_CLIENT_IP:", isset ($_SERVER ['HTTP_X_CLUSTER_CLIENT_IP']) ? strip_tags ($_SERVER ['HTTP_X_CLUSTER_CLIENT_IP']) : '', "\n";
+    echo "HTTP_FORWARDED_FOR:      ", isset ($_SERVER ['HTTP_FORWARDED_FOR']) ? strip_tags ($_SERVER ['HTTP_FORWARDED_FOR']) : '', "\n";
+    echo "HTTP_FORWARDED:          ", isset ($_SERVER ['HTTP_FORWARDED']) ? strip_tags ($_SERVER ['HTTP_FORWARDED']) : '', "\n";
+    echo "REMOTE_ADDR:             ", isset ($_SERVER ['REMOTE_ADDR']) ? strip_tags ($_SERVER ['REMOTE_ADDR']) : '', "\n";
 
     echo "\n";
 
@@ -7370,7 +7377,8 @@ function ai_load_settings () {
   } else $used_blocks = false;
 
   $obj = new ai_Block (0);                  // translators: block name (block with default settings)
-  $obj->wp_options [AI_OPTION_BLOCK_NAME] = _x('Default', 'Block name', 'ad-inserter');
+//  $obj->wp_options [AI_OPTION_BLOCK_NAME] = _x('Default', 'Block name', 'ad-inserter'); // Function _load_textdomain_just_in_time was called incorrectly. Translation loading for the ad-inserter domain was triggered too early.
+  $obj->wp_options [AI_OPTION_BLOCK_NAME] = 'Default';
   $block_object [0] = $obj;
 
   for ($block = 1; $block <= 96; $block ++) {
@@ -7623,7 +7631,7 @@ a.ai-debug-center {text-align: center; cursor: default; font-size: 10px; text-de
 .ai-debug-ad-overlay {position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #8f8; opacity: 0.6; z-index: 999999990}
 
 .ai-debug-block ins.adsbygoogle[data-ad-status="unfilled"] .ai-debug-ad-overlay {display: none;}
-.ai-debug-block ins.adsbygoogle[data-ad-status="unfilled"] {background: url(https://via.placeholder.com/800x800/aaffaa/000000.png?text=NO%20AD%20SERVED); background-size: cover; background-repeat: no-repeat; background-position: center;}
+.ai-debug-block ins.adsbygoogle[data-ad-status="unfilled"] {background: url(https://dummyimage.com/800x800/aaffaa/000000.png?text=NO%20AD%20SERVED); background-size: cover; background-repeat: no-repeat; background-position: center;}
 
 .ai-auto-ads {background-color: #84f;}
 .ai-no-slot {background-color: #48f;}
@@ -8138,6 +8146,11 @@ function ai_settings () {
       $multisite_options = array ();
       if (function_exists ('ai_filter_multisite_settings')) ai_filter_multisite_settings ($multisite_options);
       ai_check_multisite_options ($multisite_options);
+
+      // Restore settings not submitted
+      if (isset ($ai_db_options [AI_OPTION_GLOBAL]['CUSTOM_REPORTS'])) {
+        $ai_options [AI_OPTION_GLOBAL]['CUSTOM_REPORTS'] = $ai_db_options [AI_OPTION_GLOBAL]['CUSTOM_REPORTS'];
+      }
 
       ai_save_options ($ai_options, $multisite_options);
 
