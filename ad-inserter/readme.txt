@@ -6,10 +6,10 @@ Tags: ads, adsense, amp, ad rotation, ad manager
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.8.3
+Stable tag: 2.8.4
 License: GPLv3
 
-Manage Google AdSense, Media.net, Amazon banners, ads.txt, ad rotation, sticky widgets, AMP ads, DFP, tracking, AdSense header and footer code
+Manage Google AdSense ads, Amazon banners, ad rotation, sticky widgets, AMP ads, DFP, ads.txt, tracking, header and footer code, PHP code
 
 == Description ==
 
@@ -364,6 +364,9 @@ If you are not happy to reveal this information and you have opted in, simply di
 
 == Changelog ==
 
+= 2.8.4 =
+- Few minor bug fixes, cosmetic changes and code improvements
+
 = 2.8.3 =
 - Added support to override dynamic blocks setting for each rotation
 - Few minor bug fixes, cosmetic changes and code improvements
@@ -443,6 +446,9 @@ If you are not happy to reveal this information and you have opted in, simply di
 For the changelog of earlier versions, please refer to the separate changelog.txt file.
 
 == Upgrade Notice ==
+
+= 2.8.4 =
+Few minor bug fixes, cosmetic changes and code improvements
 
 = 2.8.3 =
 Added support to override dynamic blocks setting for each rotation;
