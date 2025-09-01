@@ -7028,6 +7028,8 @@ echo '</body>
 
           if ($active_paragraph_positions [$index] == 0) continue;
 
+          if (!isset ($paragraph_end_positions [$index])) continue;
+
           if ($multibyte) {
             $paragraph_code = mb_substr ($content, $paragraph_position, $paragraph_end_positions [$index] - $paragraph_position + 1);
           } else {
@@ -8120,6 +8122,8 @@ echo '</body>
 
           if ($active_paragraph_positions [$index] == 0) continue;
 
+          if (!isset ($paragraph_start_positions [$index])) continue;
+
           if ($multibyte) {
             $paragraph_code = mb_substr ($content, $paragraph_start_positions [$index], $paragraph_position - $paragraph_start_positions [$index] + 1);
           } else {
@@ -8988,6 +8992,7 @@ echo '</body>
     switch ($ai_wp_data [AI_WP_PAGE_TYPE]) {
       case AI_PT_STATIC:
       case AI_PT_POST:
+      case AI_PT_FEED:
         $wp_categories = get_the_category ();
         break;
       default:

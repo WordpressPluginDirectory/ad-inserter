@@ -327,6 +327,11 @@ function generate_settings_form (){
       <span class="checkbox-button dashicons dashicons-buddicons-forums" onclick="window.open('https://adinserter.pro/about')" ></span>
 <?php endif; ?>
 
+<!--      <label id="ai-ads-txt" class="checkbox-button iab-ads-txt" title="<?php _e ('Edit ads.txt file', 'ad-inserter'); ?>" ><span class="checkbox-icon icon-ads-txt"></span></label>-->
+<?php endif; ?>
+
+
+<?php if (!ai_is_multisite() || ai_is_main_site () || ai_settings_check_1 ('AD_INSERTER_MULTISITE_VIRTUAL_ADS_TXT')) : ?>
       <label id="ai-ads-txt" class="checkbox-button iab-ads-txt" title="<?php _e ('Edit ads.txt file', 'ad-inserter'); ?>" ><span class="checkbox-icon icon-ads-txt"></span></label>
 <?php endif; ?>
 
@@ -2605,7 +2610,7 @@ function generate_settings_form (){
         <li id="ai-fe" class="ai-plugin-tab"><a href="#tab-general-frontend"><?php _e ('Frontend', 'ad-inserter'); ?></a></li>
         <li id="ai-ad" class="ai-plugin-tab"><a href="#tab-general-admin"><?php _e ('Administration', 'ad-inserter'); ?></a></li>
         <li id="ai-co" class="ai-plugin-tab"><a href="#tab-general-constants"><?php _e ('Constants', 'ad-inserter'); ?></a></li>
-<?php if (function_exists ('ai_plugin_recaptcha_tab') && ai_settings_check ('AD_INSERTER_RECAPTCHA')): ?>
+<?php if (function_exists ('ai_plugin_recaptcha_tab') && ai_settings_check_1 ('AD_INSERTER_RECAPTCHA')): ?>
 <?php ai_plugin_recaptcha_tab (); ?>
 <?php endif; ?>
       </ul>
@@ -2925,7 +2930,7 @@ function generate_settings_form (){
 
 
 
-<?php if (function_exists ('ai_general_settings_3') && ai_settings_check ('AD_INSERTER_RECAPTCHA')): ?>
+<?php if (function_exists ('ai_general_settings_3') && ai_settings_check_1 ('AD_INSERTER_RECAPTCHA')): ?>
       <div id="tab-general-recaptcha" style="padding: 0;">
 <?php ai_general_settings_3 (); ?>
       </div>
@@ -4072,6 +4077,8 @@ function adsense_list_container () {
 }
 
 function ads_txt_container () {
+  global $ai_db_options;
+
   $rw = !function_exists ('ai_settings_write') || ai_settings_write ();
 
   if (function_exists ('ai_settings_virtual_ads_txt')) {
@@ -4102,9 +4109,20 @@ function ads_txt_container () {
         <label class="checkbox-button iab-ads-txt" title="<?php /* translators: %s: ads.txt */ echo sprintf (__('Open %s', 'ad-inserter'), $ads_txt_file); ?>" onclick="window.open('<?php echo $ads_txt_file; ?>')"><span class="checkbox-icon icon-ads-txt"></span></label>
       </span>
 
+
+<?php if (ai_settings_check_1 ('AD_INSERTER_MULTISITE_VIRTUAL_ADS_TXT')) : ?>
+
+      <span style="float: right;">
+        <span <?php echo $virtual_id; ?> class="violet"></span>
+      </span>
+
+<?php else: ?>
+
       <span style="margin-right: 10px; float: right;">
         <span <?php echo $virtual_id; ?> class="checkbox-button dashicons dashicons-shield<?php echo $virtual_ads_txt ? ' violet' : ''; ?>" title="<?php echo $virtual_title; ?>" title-virtual="<?php echo $virtual_text; ?>" title-physical="<?php echo $physical_text; ?>"></span>
       </span>
+
+<?php endif; ?>
 
       <span style="margin-right: 10px; float: right;">
         <span id="ads-txt-reload" class="checkbox-button dashicons dashicons-download" title="<?php _e ('Reload ads.txt file', 'ad-inserter'); ?>" title-editor="<?php _e ('Cancel', 'ad-inserter'); ?>" title-table="<?php _e ('Reload ads.txt file', 'ad-inserter'); ?>"></span>
@@ -4226,6 +4244,7 @@ function ads_txt ($action) {
     $ads = get_option (AI_ADS_TXT_NAME);
     if ($ads === false) {
       $virtual_file_missing = true;
+      update_option (AI_ADS_TXT_NAME, '');
       $ads = '';
       if ($action == 'table') {
         $action = 'text';
@@ -4292,12 +4311,22 @@ function ads_txt ($action) {
       echo '<div class="ai-rounded">';
                          // translators: %s: Ad Inserter
       echo '<div>', sprintf (__('ads.txt file: %s virtual ads.txt file', 'ad-inserter'), AD_INSERTER_NAME), '</div>';
+
+      if (is_multisite () && is_main_site ()) {
+                           // translators: %s: multisite installation, .htaccess file
+        echo '<div>', sprintf (__('You are using %s installation. You need to manually add to the %s file the following line:', 'ad-inserter'), 'multisite', '.htaccess'), '</div>';
+        echo '<div><pre>RewriteRule ^ads\.txt /wp-admin/admin-ajax.php?action=ai_ajax&ads-txt= [QSA,L]</pre></div>';
+      }
       echo '</div>';
 
       if ($virtual_file_missing) {
-        echo '<div id="ads-txt-missing" class="ai-rounded">';
-        echo '<div><strong><span style="color: red;">', __('Warning', 'ad-inserter'), ':</span></strong> ', /* translators: %s: Ad Inserter */ sprintf (__('%s virtual file ads.txt not found', 'ad-inserter'), AD_INSERTER_NAME), '</div>';
-        echo '</div>';
+//        echo '<div id="ads-txt-missing" class="ai-rounded">';
+//        echo '<div><strong><span style="color: red;">', __('Warning', 'ad-inserter'), ':</span></strong> ', /* translators: %s: Ad Inserter */ sprintf (__('%s virtual file ads.txt not found', 'ad-inserter'), AD_INSERTER_NAME), '</div>';
+//        echo '</div>';
+        echo '<div id="ads-txt-missing"></div>';
+      }
+      if ($ads == '') {
+        echo '<div id="ads-txt-empty"></div>';
       }
       break;
     default:
@@ -4433,11 +4462,11 @@ function ads_txt ($action) {
 
       if ($virtual) {
         if (isset ($_POST ['text'])) {
-          if ($text != '') {
+//          if ($text != '') {
             update_option (AI_ADS_TXT_NAME, $text);
-          } else {
-              delete_option (AI_ADS_TXT_NAME);
-            }
+//          } else {
+//              delete_option (AI_ADS_TXT_NAME);
+//            }
           ai_add_rewrite_rules ();
           flush_rewrite_rules();
         }
@@ -5884,7 +5913,7 @@ function sidebar_addense_alternative () { ?>
 
 <?php
 
-  switch (rand (1, 12)) {
+  switch (rand (1, 16)) {
     case 1:
     case 2:
     case 3:
@@ -5947,56 +5976,88 @@ function sidebar_addense_alternative () { ?>
 <?php
       break;
 
-//    case 9:
-//    case 10:
-//    case 11:
-//    case 12:
-?>
-<!--      <div class="ai-form header ai-rounded">-->
-<!--        <div style="float: left;">-->
-<!--          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Grow Revenue Today', 'ad-inserter'); ?></h2>-->
-<!--        </div>-->
-<!--        <div style="clear: both;"></div>-->
-<!--      </div>-->
-<!--      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">-->
-<!--        <a href='https://publisher.dotaudiences.com/?utm_source=adinserter&utm_medium=ads&utm_campaign=adinserter' class="clear-link" title="<?php _e ('Grow Revenue Today', 'ad-inserter'); ?>" target="_blank"><img id="ai-je-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>je-2.gif" /></a>-->
-<!--      </div>-->
-<?php
-//      break;
 
-//    case 13:
-//    case 14:
-//    case 15:
-//    case 16:
+    case 13:
 ?>
-<!--      <div class="ai-form header ai-rounded">-->
-<!--        <div style="float: left;">-->
-<!--          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Maximize Revenue', 'ad-inserter'); ?></h2>-->
-<!--        </div>-->
-<!--        <div style="clear: both;"></div>-->
-<!--      </div>-->
-<!--      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">-->
-<!--        <a href="https://www.buddyboss.com/something-big/?utm_source=WPMinute&utm_medium=Email&utm_campaign=something_big" class="clear-link" title="<?php _e ('Maximize Revenue', 'ad-inserter'); ?>" target="_blank"><img id="ai-bb-728" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>bb-728.png" /></a>-->
-<!--      </div>-->
+      <div class="ai-form header ai-rounded">
+        <div style="float: left;">
+          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Save More on AdX', 'ad-inserter'); ?></h2>
+        </div>
+        <div style="clear: both;"></div>
+      </div>
+      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">
+        <a href="https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter" class="clear-link" title="<?php _e ('Save More on AdX', 'ad-inserter'); ?>" target="_blank"><img id="mb-72-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-72-1.jpg" /></a>
+      </div>
 <?php
-//      break;
+      break;
+    case 14:
+?>
+      <div class="ai-form header ai-rounded">
+        <div style="float: left;">
+          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Save More on AdX', 'ad-inserter'); ?></h2>
+        </div>
+        <div style="clear: both;"></div>
+      </div>
+      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">
+        <a href="https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter" class="clear-link" title="<?php _e ('Save More on AdX', 'ad-inserter'); ?>" target="_blank"><img id="mb-72-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-72-2.jpg" /></a>
+      </div>
+<?php
+      break;
+    case 15:
+?>
+      <div class="ai-form header ai-rounded">
+        <div style="float: left;">
+          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Save More on AdX', 'ad-inserter'); ?></h2>
+        </div>
+        <div style="clear: both;"></div>
+      </div>
+      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">
+        <a href="https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter" class="clear-link" title="<?php _e ('Save More on AdX', 'ad-inserter'); ?>" target="_blank"><img id="mb-72-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-72-3.jpg" /></a>
+      </div>
+<?php
+      break;
+    case 16:
+?>
+      <div class="ai-form header ai-rounded">
+        <div style="float: left;">
+          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Save More on AdX', 'ad-inserter'); ?></h2>
+        </div>
+        <div style="clear: both;"></div>
+      </div>
+      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">
+        <a href="https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter" class="clear-link" title="<?php _e ('Save More on AdX', 'ad-inserter'); ?>" target="_blank"><img id="mb-72-4" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-72-4.jpg" /></a>
+      </div>
+<?php
+      break;
 
 //    case 17:
 //    case 18:
+?>
+<!--      <div class="ai-form header ai-rounded">-->
+<!--        <div style="float: left;">-->
+<!--          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Maximize the revenue', 'ad-inserter'); ?></h2>-->
+<!--        </div>-->
+<!--        <div style="clear: both;"></div>-->
+<!--      </div>-->
+<!--      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">-->
+<!--        <a href="https://publisher.joinads.me/conversao-en?utm_source=AdInserter&utm_medium=banner&utm_campaign=lead&utm_content=carrossel" class="clear-link" title="<?php _e ('Maximize the revenue', 'ad-inserter'); ?>" target="_blank"><img id="ja72-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ja72-1.png" /></a>-->
+<!--      </div>-->
+<?php
+//      break;
 //    case 19:
 //    case 20:
 ?>
 <!--      <div class="ai-form header ai-rounded">-->
 <!--        <div style="float: left;">-->
-<!--          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Maximize Revenue', 'ad-inserter'); ?></h2>-->
+<!--          <h2 style="display: inline-block; margin: 5px 0;"><?php _e ('Maximize the revenue', 'ad-inserter'); ?></h2>-->
 <!--        </div>-->
 <!--        <div style="clear: both;"></div>-->
 <!--      </div>-->
 <!--      <div class="ai-form ai-rounded" style="height: 90px; padding: 8px 4px 8px 12px;">-->
-<!--        <a href="http://playwire.com/?utm_campaign=Ad%20Inserter%20Pro&utm_source=Ad%20Inserter%20Pro&utm_medium=ad-inserter-pro" class="clear-link" title="<?php _e ('Maximize Revenue', 'ad-inserter'); ?>" target="_blank"><img id="ai-pw-728" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>pw-728.png" /></a>-->
+<!--        <a href="https://publisher.joinads.me/conversao-en?utm_source=AdInserter&utm_medium=banner&utm_campaign=lead&utm_content=carrossel" class="clear-link" title="<?php _e ('Maximize the revenue', 'ad-inserter'); ?>" target="_blank"><img id="ja72-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ja72-2.png" /></a>-->
 <!--      </div>-->
 <?php
-//      break;
+      break;
 
   }
 ?>
@@ -6172,13 +6233,16 @@ function sidebar_pro () {
 <!--            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>-->
             <a href="https://bit.ly/3Thf4KQ" class="clear-link" title="<?php _e ('Join to AdManager', 'ad-inserter'); ?>" target="_blank"><img id="ai-ha-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ha-1.png" /></a>
 <?php   break; case 1: ?>
-            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-5" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-5.png" /></a>
+<!--            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-5" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-5.png" /></a>-->
+<!--            <a href="https://publisher.joinads.me/conversao-en?utm_source=AdInserter&utm_medium=banner&utm_campaign=lead&utm_content=carrossel" class="clear-link" title="<?php _e ('Maximize the revenue', 'ad-inserter'); ?>" target="_blank"><img id="ja25-1-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ja25-1.png" /></a>-->
+            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>
 <?php   break; case 2: ?>
 <!--            <a href='https://adinserter.pro/documentation/ad-blocking-detection' class="clear-link" title="<?php _e ('Ad blocking detection and content protection', 'ad-inserter'); ?>" target="_blank"><img id="ai-adb" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-adb.png" /></a>-->
             <a href='https://lhkmedia.io/servicerequest' class="clear-link" title="<?php _e ('Need ADX?', 'ad-inserter'); ?>" target="_blank"><img id="ai-lhk-25" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>lhk-25.jpg" /></a>
 <?php   break; case 3: ?>
-            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>
+<!--            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>-->
 <!--            <a href='https://publisher.dotaudiences.com/?utm_source=adinserter&utm_medium=ads&utm_campaign=adinserter' class="clear-link" title="<?php _e ('Grow Revenue Today', 'ad-inserter'); ?>" target="_blank"><img id="ai-je-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>je-1.gif" /></a>-->
+            <a href='https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter' class="clear-link" target="_blank"><img id="mb-25-1-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-25-1.gif" /></a>
 <?php   break;
       } ?>
           </div>
@@ -6186,8 +6250,9 @@ function sidebar_pro () {
 <?php switch ($version) {
         case 0:
 ?>
-            <a href='https://adinserter.pro/documentation/ad-blocking-detection' class="clear-link" title="<?php _e ('Ad blocking detection and content protection', 'ad-inserter'); ?>" target="_blank"><img id="ai-adb" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-adb.png" /></a>
+<!--            <a href='https://adinserter.pro/documentation/ad-blocking-detection' class="clear-link" title="<?php _e ('Ad blocking detection and content protection', 'ad-inserter'); ?>" target="_blank"><img id="ai-adb" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-adb.png" /></a>-->
 <!--            <a href='https://publisher.dotaudiences.com/?utm_source=adinserter&utm_medium=ads&utm_campaign=adinserter' class="clear-link" title="<?php _e ('Grow Revenue Today', 'ad-inserter'); ?>" target="_blank"><img id="ai-je-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>je-1.gif" /></a>-->
+            <a href='https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter' class="clear-link" target="_blank"><img id="mb-25-2-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-25-2.gif" /></a>
 <?php   break;
         case 1:
         ?>
@@ -6196,7 +6261,9 @@ function sidebar_pro () {
 <?php   break;
         case 2:
         ?>
-            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-7" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-7.jpg" /></a>
+<!--            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-7" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-7.jpg" /></a>-->
+<!--            <a href="https://publisher.joinads.me/conversao-en?utm_source=AdInserter&utm_medium=banner&utm_campaign=lead&utm_content=carrossel" class="clear-link" title="<?php _e ('Maximize the revenue', 'ad-inserter'); ?>" target="_blank"><img id="ja25-2-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ja25-2.png" /></a>-->
+            <a href="https://adinserter.pro/documentation/black-and-white-lists#geo-targeting" class="clear-link" title="Geotargeting - black/white-list countries" target="_blank"><img id="ai-pro-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-countries-250.png" /></a>
 <?php   break;
         case 3:
         ?>
@@ -6212,14 +6279,17 @@ function sidebar_pro () {
 <!--            <a href="https://adinserter.pro/documentation/black-and-white-lists#geo-targeting" class="clear-link" title="Geotargeting - black/white-list countries" target="_blank"><img id="ai-pro-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-countries-250.png" /></a>-->
             <a href='https://lhkmedia.io/servicerequest' class="clear-link" title="<?php _e ('Need ADX?', 'ad-inserter'); ?>" target="_blank"><img id="ai-lhk-25" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>lhk-25.jpg" /></a>
 <?php   break; case 1: ?>
-            <a href="https://adinserter.pro/documentation/black-and-white-lists#geo-targeting" class="clear-link" title="Geotargeting - black/white-list countries" target="_blank"><img id="ai-pro-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-countries-250.png" /></a>
+<!--            <a href="https://adinserter.pro/documentation/black-and-white-lists#geo-targeting" class="clear-link" title="Geotargeting - black/white-list countries" target="_blank"><img id="ai-pro-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-countries-250.png" /></a>-->
 <!--            <a href='https://publisher.dotaudiences.com/?utm_source=adinserter&utm_medium=ads&utm_campaign=adinserter' class="clear-link" title="<?php _e ('Grow Revenue Today', 'ad-inserter'); ?>" target="_blank"><img id="ai-je-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>je-1.gif" /></a>-->
+            <a href='https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter' class="clear-link" target="_blank"><img id="mb-25-1-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-25-1.gif" /></a>
 <?php   break; case 2: ?>
 <!--            <a href='https://adinserter.pro/documentation/plugin-settings#recaptcha' class="clear-link" title="<?php _e ('Stop invalid traffic with reCAPTCHA v3 score check', 'ad-inserter'); ?>" target="_blank"><img id="ai-recaptcha" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-recaptcha-250.png" /></a>-->
             <a href="https://bit.ly/3Thf4KQ" class="clear-link" title="<?php _e ('Join to AdManager', 'ad-inserter'); ?>" target="_blank"><img id="ai-ha-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ha-1.png" /></a>
 <?php   break; case 3: ?>
+            <a href='https://adinserter.pro/documentation/plugin-settings#recaptcha' class="clear-link" title="<?php _e ('Stop invalid traffic with reCAPTCHA v3 score check', 'ad-inserter'); ?>" target="_blank"><img id="ai-recaptcha" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-recaptcha-250.png" /></a>
 <!--            <a href='https://www.media.net/program?ha=e9Pw4uwo2Uw/5xjjsB3lnYZZWUI+hzRSONzDaYA9EwX+3jg/PJYwFshOFEjop5NH2wRNDfr357ZTY1zlhCk7zw%3D%3D&loc=2' class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-media-9" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>contextual-9.gif" /></a>-->
-            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-7" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-7.jpg" /></a>
+<!--            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-7" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-7.jpg" /></a>-->
+<!--            <a href="https://publisher.joinads.me/conversao-en?utm_source=AdInserter&utm_medium=banner&utm_campaign=lead&utm_content=carrossel" class="clear-link" title="<?php _e ('Maximize the revenue', 'ad-inserter'); ?>" target="_blank"><img id="ja25-1-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ja25-1.png" /></a>-->
 <?php   break;
       } ?>
           </div>
@@ -6227,7 +6297,9 @@ function sidebar_pro () {
 <?php switch ($version) {
         case 0:
         ?>
-            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-5" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-5.png" /></a>
+<!--            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-5" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-5.png" /></a>-->
+<!--            <a href="https://publisher.joinads.me/conversao-en?utm_source=AdInserter&utm_medium=banner&utm_campaign=lead&utm_content=carrossel" class="clear-link" title="<?php _e ('Maximize the revenue', 'ad-inserter'); ?>" target="_blank"><img id="ja25-2-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ja25-2.png" /></a>-->
+            <a href="https://adinserter.pro/documentation/ad-impression-and-click-tracking" class="clear-link" title="<?php _e ('A/B testing - Track ad impressions and clicks', 'ad-inserter'); ?>" target="_blank"><img id="ai-pro-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-charts-250.png" /></a>
 <?php   break;
         case 1:
 ?>
@@ -6238,8 +6310,9 @@ function sidebar_pro () {
 ?>
 <!--            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>-->
 <!--            <a href='https://publisher.dotaudiences.com/?utm_source=adinserter&utm_medium=ads&utm_campaign=adinserter' class="clear-link" title="<?php _e ('Grow Revenue Today', 'ad-inserter'); ?>" target="_blank"><img id="ai-je-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>je-1.gif" /></a>-->
-            <a href="https://adinserter.pro/documentation/ad-impression-and-click-tracking" class="clear-link" title="<?php _e ('A/B testing - Track ad impressions and clicks', 'ad-inserter'); ?>" target="_blank"><img id="ai-pro-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-charts-250.png" /></a>
+<!--            <a href="https://adinserter.pro/documentation/ad-impression-and-click-tracking" class="clear-link" title="<?php _e ('A/B testing - Track ad impressions and clicks', 'ad-inserter'); ?>" target="_blank"><img id="ai-pro-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-charts-250.png" /></a>-->
 <!--            <a href="https://adinserter.pro/" class="clear-link" title="Automate ad placement on posts and pages" target="_blank"><img id="ai-pro-1" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>icon-256x256.jpg" /></a>-->
+            <a href='https://magicbid.ai/content-monetization-expert?utm_source=Plugin&utm_medium=referal&utm_campaign=Adinserter' class="clear-link" target="_blank"><img id="mb-25-2-2" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>mb-25-2.gif" /></a>
 <?php   break;
         case 3:
 ?>
@@ -6252,19 +6325,23 @@ function sidebar_pro () {
 <?php switch ($version) {
         case 0:
 ?>
-            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>
+<!--            <a href='https://adinserter.pro/documentation/code-preview' class="clear-link" title="<?php _e ('Code preview with visual CSS editor', 'ad-inserter'); ?>" target="_blank"><img id="ai-preview" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-preview-250.png" /></a>-->
+            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-5" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-5.png" /></a>
 <?php   break;
         case 1:
 ?>
-            <a href='https://adinserter.pro/documentation/ad-blocking-detection' class="clear-link" title="<?php _e ('Ad blocking detection and content protection', 'ad-inserter'); ?>" target="_blank"><img id="ai-adb" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-adb.png" /></a>
+<!--            <a href='https://adinserter.pro/documentation/ad-blocking-detection' class="clear-link" title="<?php _e ('Ad blocking detection and content protection', 'ad-inserter'); ?>" target="_blank"><img id="ai-adb" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-adb.png" /></a>-->
+            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-7" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-7.jpg" /></a>
 <?php   break;
         case 2:
 ?>
-            <a href="https://adinserter.pro/documentation/black-and-white-lists#geo-targeting" class="clear-link" title="Geotargeting - black/white-list countries" target="_blank"><img id="ai-pro-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-countries-250.png" /></a>
+<!--            <a href="https://adinserter.pro/documentation/black-and-white-lists#geo-targeting" class="clear-link" title="Geotargeting - black/white-list countries" target="_blank"><img id="ai-pro-3" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-countries-250.png" /></a>-->
+            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-7" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-7.jpg" /></a>
 <?php   break;
         case 3:
 ?>
-            <a href='https://adinserter.pro/documentation/plugin-settings#recaptcha' class="clear-link" title="<?php _e ('Stop invalid traffic with reCAPTCHA v3 score check', 'ad-inserter'); ?>" target="_blank"><img id="ai-recaptcha" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-recaptcha-250.png" /></a>
+<!--            <a href='https://adinserter.pro/documentation/plugin-settings#recaptcha' class="clear-link" title="<?php _e ('Stop invalid traffic with reCAPTCHA v3 score check', 'ad-inserter'); ?>" target="_blank"><img id="ai-recaptcha" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ai-recaptcha-250.png" /></a>-->
+            <a href="https://www.ezoic.com/?utm_source=ad-inserter&utm_medium=ads&utm_campaign=ad-inserter-ads&utm_term=adinserter&utm_content=ezoic&loc=2" class="clear-link" title="<?php _e ('Looking for AdSense alternative?', 'ad-inserter'); ?>" target="_blank"><img id="ai-ez-5" src="<?php echo AD_INSERTER_PLUGIN_IMAGES_URL; ?>ez-5.png" /></a>
 <?php   break;
       } ?>
           </div>
